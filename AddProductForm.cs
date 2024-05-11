@@ -183,7 +183,7 @@ namespace InventoryManagement
 			addButton.Text = "Add";
 			addButton.Location = new System.Drawing.Point(1225, 290);
 			addButton.Size = new System.Drawing.Size(80, 35);
-			//addButton.Click += addButton_Click;
+			addButton.Click += addButton_Click;
 			Controls.Add(addButton);
 
 			// Delete Button
@@ -191,7 +191,7 @@ namespace InventoryManagement
 			deleteButton.Text = "Delete";
 			deleteButton.Location = new System.Drawing.Point(1225, 550);
 			deleteButton.Size = new System.Drawing.Size(80, 35);
-			//deleteButton.Click += deleteButton_Click;
+			deleteButton.Click += deleteButton_Click;
 			Controls.Add(deleteButton);
 
 			// Cancel Button
@@ -199,7 +199,7 @@ namespace InventoryManagement
 			cancelButton.Text = "Cancel";
 			cancelButton.Location = new System.Drawing.Point(1225, 600);
 			cancelButton.Size = new System.Drawing.Size(80, 35);
-			//cancelButton.Click += cancelButton_Click;
+			cancelButton.Click += cancelButton_Click;
 			Controls.Add(cancelButton);
 
 			// Save Button
@@ -207,7 +207,7 @@ namespace InventoryManagement
 			saveButton.Text = "Save";
 			saveButton.Location = new System.Drawing.Point(1135, 600);
 			saveButton.Size = new System.Drawing.Size(80, 35);
-			//saveButton.Click += saveButton_Click;
+			saveButton.Click += saveButton_Click;
 			Controls.Add(saveButton);
 
 			// Product Details Labels and TextBoxes
@@ -235,6 +235,90 @@ namespace InventoryManagement
 			textBox.Location = new System.Drawing.Point(160, posY);
 			textBox.Size = new System.Drawing.Size(180, 20);
 			Controls.Add(textBox);
+		}
+
+		private void saveButton_Click(object sender, EventArgs e)
+		{
+			try
+			{
+				// create new product instance and set the properties from the form
+				Product newProduct = new Product
+				{
+					ProductID = int.Parse(idTextBox.Text),
+					Name = nameTextBox.Text,
+					Price = decimal.Parse(priceTextBox.Text),
+					InStock = int.Parse(inventoryTextBox.Text),
+					Min = int.Parse(minTextBox.Text),
+					Max = int.Parse(maxTextBox.Text)
+				};
+				// add each associated part from the associated parts grid view to the new product
+				foreach (DataGridViewRow row in associatedPartsGridView.Rows)
+				{
+					var part = (Part)row.DataBoundItem;
+					newProduct.AddAssociatedPart(part);
+				}
+				// add the new product to the inventory
+				inventory.AddProduct(newProduct);
+				// close the form
+				this.Close();
+			}
+			catch(Exception ex)
+			{
+				MessageBox.Show($"Error adding product: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			}
+		}
+
+		// Cancel Button Click Event
+		private void cancelButton_Click(object sender, EventArgs e)
+		{
+			this.Close();
+		}
+
+		// Add Button Click Event
+		private void addButton_Click(object sender, EventArgs e)
+		{
+			// retrieve the selected part from the all parts grid view
+			if(allPartsGridView.SelectedRows.Count > 0)
+			{
+				Part selectedPart = (Part)allPartsGridView.SelectedRows[0].DataBoundItem;
+
+				// add the selected part to the associated parts grid view
+				product.AddAssociatedPart(selectedPart);
+
+				// refresh the associated parts grid view to show the newly added part
+				associatedPartsGridView.DataSource = null;
+				associatedPartsGridView.DataSource = product.AssociatedParts;
+			}
+			else
+			{
+				MessageBox.Show("Please select a part to add.", "Selection Required", MessageBoxButtons.OK, MessageBoxIcon.Information);
+			}
+		}
+
+		// Delete Button Click Event
+		private void deleteButton_Click(object sender, EventArgs e)
+		{
+			if(associatedPartsGridView.SelectedRows.Count > 0)
+			{
+				// retrieve the selected part from the associated parts grid view
+				Part selectedPart = (Part)associatedPartsGridView.SelectedRows[0].DataBoundItem;
+
+				// confirm deletion from the user
+				DialogResult confirmResult = MessageBox.Show("Are you sure you want to delete this part?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+				if (confirmResult == DialogResult.Yes)
+				{
+					// remove the selected part from the associated parts grid view
+					product.RemoveAssociatedPart(selectedPart.PartID);
+				}
+
+				// refresh the associated parts grid view to show the newly removed part
+				associatedPartsGridView.DataSource = null;
+				associatedPartsGridView.DataSource = product.AssociatedParts;
+			}
+			else
+			{
+				MessageBox.Show("Please select a part to delete.", "Selection Required", MessageBoxButtons.OK, MessageBoxIcon.Information);
+			}
 		}
 
 	}

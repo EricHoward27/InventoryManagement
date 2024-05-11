@@ -357,7 +357,7 @@ namespace InventoryManagement
 		// Modify Product Button Click
 		private void ModifyProductButton_Click(object sender, EventArgs e)
 		{
-			ModifyProductForm modifyProductForm = new ModifyProductForm();
+			ModifyProductForm modifyProductForm = new ModifyProductForm(newProduct, inventory);
 			modifyProductForm.Show();
 		}
 
