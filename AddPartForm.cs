@@ -111,9 +111,43 @@ namespace InventoryManagement
 			}
 		}
 
+		// validation methods to handle user input errors
+		private bool IsNumericValid(string input, out int result)
+		{
+			return int.TryParse(input, out result);
+		}
+
+		private bool IsDecimalValid(string input, out decimal result)
+		{
+			return decimal.TryParse(input, out result);
+		}
+
 		// create a method to save the part information to the Inventory Model.AddPart method to store in the binding list
 		private void saveButton_Click(object sender, EventArgs e)
 		{
+			int inStock, min, max;
+			decimal price;
+
+			// validate if the user input is a valid numeric value for each text box field that requires it
+			if (!IsNumericValid(inventoryTextBox.Text, out inStock) || !IsDecimalValid(priceTextBox.Text, out price) ||
+				!IsNumericValid(minTextBox.Text, out min) || !IsNumericValid(maxTextBox.Text, out max))
+			{
+				MessageBox.Show("Please enter valid numeric values.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				return;
+			}
+
+			if (min > max)
+			{
+				MessageBox.Show("Minimum value cannot be greater than the maximum value.", "Invalid Range", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				return;
+			}
+
+			if (inStock < min || inStock > max)
+			{
+				MessageBox.Show("Inventory value must be within the minimum and maximum range.", "Invalid Inventory", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				return;
+			}
+
 			// Logic to save the part information
 			Part part;
 			if (inHouseRadioButton.Checked)

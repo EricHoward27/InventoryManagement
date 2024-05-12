@@ -395,6 +395,43 @@ namespace InventoryManagement
 		private void DeleteProductButton_Click(object sender, EventArgs e)
 		{
 			// Logic to delete a product
+			if(productsGridView.SelectedRows.Count > 0)
+			{
+				// retrieve the selected product
+				Product selectedProduct = (Product)productsGridView.SelectedRows[0].DataBoundItem;
+				// Confirm deletion from the user
+				DialogResult confirmResult = MessageBox.Show("Are you sure you want to delete this product?", "Confirm Delete",
+					MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+				if (confirmResult == DialogResult.Yes)
+				{
+					// check if the product has associated parts that might prevent deletion
+					if(selectedProduct.AssociatedParts.Count > 0)
+					{
+						MessageBox.Show("Cannot delete product because it has associated parts.", "Deletion Blocked", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					}
+					else
+					{
+						// remove the product from the inventory
+						if (inventory.RemoveProduct(selectedProduct.ProductID))
+						{
+							MessageBox.Show("Product deleted successfully.", "Deletion Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
+							// refresh the grid view
+							productsGridView.DataSource = null;
+
+							productsGridView.DataSource = inventory.Products;
+						}
+						else
+						{
+							MessageBox.Show("Error deleting product.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+						}
+					}
+				}
+			}
+			else
+			{
+				MessageBox.Show("Please select a product to delete.", "Selection Required", MessageBoxButtons.OK, MessageBoxIcon.Information);
+			}
 		}
 
 		// Exit Button Click
