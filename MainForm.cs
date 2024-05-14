@@ -222,7 +222,7 @@ namespace InventoryManagement
 			searchPartButton.Text = "Search";
 			searchPartButton.Location = new System.Drawing.Point(455, 50);
 			searchPartButton.Size = new System.Drawing.Size(75, 25);
-			//searchPartButton.Click += SearchPartButton_Click;
+			searchPartButton.Click += searchPartButton_Click;
 			Controls.Add(searchPartButton);
 			#endregion
 
@@ -277,7 +277,7 @@ namespace InventoryManagement
 			searchProductButton.Text = "Search";
 			searchProductButton.Location = new System.Drawing.Point(1100, 50);
 			searchProductButton.Size = new System.Drawing.Size(75, 25);
-			//searchProductButton.Click += SearchProductButton_Click;
+			searchProductButton.Click += searchProductButton_Click;
 			Controls.Add(searchProductButton);
 			#endregion
 
@@ -438,6 +438,69 @@ namespace InventoryManagement
 		private void ExitButton_Click(object sender, EventArgs e)
 		{
 			Application.Exit();
+		}
+
+		// Search Part Button Click event
+		private void searchPartButton_Click(object sender, EventArgs e)
+		{
+			string searchText = searchPartsBox.Text;
+			var foundParts = inventory.SearchPart(searchText);
+			partsGridView.DataSource = foundParts;
+
+			// display a matching row and highlight it
+			foreach(DataGridViewRow row in partsGridView.Rows)
+			{
+				if (row.Cells["Name"].Value.ToString().ToLower().Contains(searchText))
+				{
+					// select the row
+					partsGridView.Rows[row.Index].Selected = true;
+
+					row.DefaultCellStyle.BackColor = Color.Cyan;
+
+
+				}
+				else
+				{
+					row.DefaultCellStyle.BackColor = Color.White;
+				}
+			}
+
+			if (foundParts.Count == 0)
+			{
+				MessageBox.Show("No parts found matching the search criteria.", "Search Result",
+										MessageBoxButtons.OK, MessageBoxIcon.Information);
+			}
+		}
+
+		// Search Product Button Click event
+		private void searchProductButton_Click(object sender, EventArgs e)
+		{
+			string searchText = searchProductsBox.Text;
+			var foundProducts = inventory.SearchProduct(searchText);
+			productsGridView.DataSource = foundProducts;
+
+			// display a matching row and highlight it
+			foreach (DataGridViewRow row in productsGridView.Rows)
+			{
+				if (row.Cells["Name"].Value.ToString().ToLower().Contains(searchText))
+				{
+					// select the row
+					productsGridView.Rows[row.Index].Selected = true;
+
+					// change the background color of the row that matches the search criteria
+					row.DefaultCellStyle.BackColor = Color.Cyan;
+				}
+				else
+				{
+					row.DefaultCellStyle.BackColor = Color.White;
+				}
+			}
+
+			if (foundProducts.Count == 0)
+			{
+				MessageBox.Show("No products found matching the search criteria.", "Search Result",
+										MessageBoxButtons.OK, MessageBoxIcon.Information);
+			}
 		}
 		#endregion
 

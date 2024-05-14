@@ -23,9 +23,8 @@ namespace InventoryManagement
 		// pass the instance of the Inventory Model to the AddPartForm constructor
 		public AddPartForm(Inventory inventory)
 		{
-			InitializeComponents();
 			this.inventory = inventory;
-
+			InitializeComponents();
 		}
 		private void InitializeComponents()
 		{
@@ -45,6 +44,7 @@ namespace InventoryManagement
 			inHouseRadioButton.Text = "In-House";
 			inHouseRadioButton.Location = new System.Drawing.Point(50, 50);
 			inHouseRadioButton.Size = new System.Drawing.Size(100, 30);
+			inHouseRadioButton.Checked = true;
 			inHouseRadioButton.CheckedChanged += InHouseRadioButton_CheckedChanged;
 			Controls.Add(inHouseRadioButton);
 
@@ -57,6 +57,9 @@ namespace InventoryManagement
 
 			//Part Details Labels and TextBoxes I am using the CreateLabelAndTextBox method to create the labels and textboxes for the part details
 			CreateLabelAndTextBox(out idLabel, out idTextBox, "ID", 80);
+			// Generate the next part ID
+			idTextBox.Text = inventory.GetNextPartID().ToString();
+			idTextBox.Enabled = false;
 			CreateLabelAndTextBox(out nameLabel, out nameTextBox, "Name", 120);
 			CreateLabelAndTextBox(out inventoryLabel, out inventoryTextBox, "Inventory", 160);
 			CreateLabelAndTextBox(out priceLabel, out priceTextBox, "Price", 200);

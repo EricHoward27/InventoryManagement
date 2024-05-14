@@ -45,6 +45,7 @@ namespace InventoryManagement
 			inHouseRadioButton.Text = "In-House";
 			inHouseRadioButton.Location = new System.Drawing.Point(50, 50);
 			inHouseRadioButton.Size = new System.Drawing.Size(100, 30);
+			inHouseRadioButton.Checked = true;
 			inHouseRadioButton.CheckedChanged += PartTypeRadioButton_CheckedChanged;
 			Controls.Add(inHouseRadioButton);
 

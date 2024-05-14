@@ -178,6 +178,20 @@ namespace InventoryManagement
 			associatedPartsGridView.Size = new System.Drawing.Size(635, 200);
 			Controls.Add(associatedPartsGridView);
 
+			// Associate Parts Search Box
+			searchTextBox = new TextBox();
+			searchTextBox.Location = new System.Drawing.Point(1180, 50);
+			searchTextBox.Size = new System.Drawing.Size(150, 75);
+			Controls.Add(searchTextBox);
+
+			// Search Button
+			searchButton = new Button();
+			searchButton.Text = "Search";
+			searchButton.Location = new System.Drawing.Point(1100, 50);
+			searchButton.Size = new System.Drawing.Size(75, 25);
+			searchButton.Click += searchButton_Click;
+			Controls.Add(searchButton);
+
 			// Add Button
 			addButton = new Button();
 			addButton.Text = "Add";
@@ -212,6 +226,8 @@ namespace InventoryManagement
 
 			// Product Details Labels and TextBoxes
 			CreateLabelAndTextBox(out idLabel, out idTextBox, "ID", 80);
+			idTextBox.Text = inventory.GetNextPartID().ToString();
+			idTextBox.Enabled = false;
 			CreateLabelAndTextBox(out nameLabel, out nameTextBox, "Name", 120);
 			CreateLabelAndTextBox(out inventoryLabel, out inventoryTextBox, "Inventory", 160);
 			CreateLabelAndTextBox(out priceLabel, out priceTextBox, "Price", 200);
@@ -352,6 +368,35 @@ namespace InventoryManagement
 			{
 				MessageBox.Show("Please select a part to delete.", "Selection Required", MessageBoxButtons.OK, MessageBoxIcon.Information);
 			}
+		}
+
+		// Search Button Click Event
+		private void searchButton_Click(object sender, EventArgs e)
+		{
+			string searchText = searchTextBox.Text.ToLower();
+			var foundParts = inventory.SearchAssociatedPart(searchText, product.AssociatedParts);
+			associatedPartsGridView.DataSource = foundParts;
+
+			// highlight the matching row
+			foreach(DataGridViewRow row in associatedPartsGridView.Rows)
+			{
+				if (row.Cells["Name"].Value.ToString().ToLower().Contains(searchText))
+				{
+					// select the matching row
+					allPartsGridView.Rows[row.Index].Selected = true;
+
+					row.DefaultCellStyle.BackColor = Color.Yellow;
+				}
+				else
+				{
+					row.DefaultCellStyle.BackColor = Color.White;
+				}
+			}
+			if (foundParts.Count == 0)
+			{
+				MessageBox.Show("No associated parts found matching the search criteria.", "No Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
+			}
+
 		}
 
 	}
