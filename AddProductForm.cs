@@ -19,6 +19,7 @@ namespace InventoryManagement
 		private Label idLabel, nameLabel, inventoryLabel, priceLabel, maxLabel, minLabel, titleLabel, allPartsLabel, associatedPartsLabel;
 		private Inventory inventory;
 		private Product product;
+		private ToolTip tooltip;
 		public AddProductForm(Product product, Inventory inventory)
 		{
 			this.product = product;
@@ -225,14 +226,21 @@ namespace InventoryManagement
 			Controls.Add(saveButton);
 
 			// Product Details Labels and TextBoxes
+			// init tooltip component
+			tooltip = new ToolTip();
 			CreateLabelAndTextBox(out idLabel, out idTextBox, "ID", 80);
 			idTextBox.Text = inventory.GetNextPartID().ToString();
 			idTextBox.Enabled = false;
 			CreateLabelAndTextBox(out nameLabel, out nameTextBox, "Name", 120);
+			SetRequiredField(nameTextBox, "Enter the name of the product.");
 			CreateLabelAndTextBox(out inventoryLabel, out inventoryTextBox, "Inventory", 160);
+			SetRequiredField(inventoryTextBox, "Enter the inventory count, must be a number.");
 			CreateLabelAndTextBox(out priceLabel, out priceTextBox, "Price", 200);
+			SetRequiredField(priceTextBox, "Enter the price, must be a numeric value.");
 			CreateLabelAndTextBox(out maxLabel, out maxTextBox, "Max", 240);
+			SetRequiredField(maxTextBox, "Enter the maximum inventory level.");
 			CreateLabelAndTextBox(out minLabel, out minTextBox, "Min", 280);
+			SetRequiredField(minTextBox, "Enter the minimum inventory level.");
 
 		}
 
@@ -252,6 +260,17 @@ namespace InventoryManagement
 			textBox.Size = new System.Drawing.Size(180, 20);
 			Controls.Add(textBox);
 		}
+
+		// helper methods to config required fields
+		private void SetRequiredField(TextBox textBox, string tooltipText)
+		{
+			// set the background color to red to indicate a required field
+			textBox.BackColor = Color.LightYellow;
+
+			// set the tooltip for the required field
+			tooltip.SetToolTip(textBox, tooltipText);
+		}
+
 		// validation methods to handle user input errors
 		private bool IsNumericValid(string input, out int result)
 		{
@@ -285,6 +304,13 @@ namespace InventoryManagement
 			if(inStock < min || inStock > max)
 			{
 				MessageBox.Show("Inventory value must be within the minimum and maximum range.", "Invalid Inventory", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				return;
+			}
+
+			// validate that the product has at least one associated part'
+			if (product.AssociatedParts.Count == 0)
+			{
+				MessageBox.Show("Please add at least one associated part to the product.", "No Associated Parts", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return;
 			}
 			// Save the product information to the Inventory Model.AddProduct method to store in the binding list

@@ -19,6 +19,7 @@ namespace InventoryManagement
 		private Label idLabel, nameLabel, inventoryLabel, priceLabel, maxLabel, minLabel, titleLabel, allPartsLabel, associatedPartsLabel;
 		private Inventory inventory;
 		private Product product;
+		private ToolTip tooltip;
 
 		public ModifyProductForm(Product product, Inventory inventory)
 		{
@@ -229,14 +230,22 @@ namespace InventoryManagement
 			Controls.Add(saveButton);
 
 			// Product Details Labels and TextBoxes
+
+			// init the tooltip
+			tooltip = new ToolTip();
 			CreateLabelAndTextBox(out idLabel, out idTextBox, "ID", 80);
 			idTextBox.Enabled = false;
 			idTextBox.ReadOnly = true;
 			CreateLabelAndTextBox(out nameLabel, out nameTextBox, "Name", 120);
+			SetRequiredField(nameTextBox, "Enter the name of the product.");
 			CreateLabelAndTextBox(out inventoryLabel, out inventoryTextBox, "Inventory", 160);
+			SetRequiredField(inventoryTextBox, "Enter the inventory count, must be a number.");
 			CreateLabelAndTextBox(out priceLabel, out priceTextBox, "Price", 200);
+			SetRequiredField(priceTextBox, "Enter the price, must be a numeric value.");
 			CreateLabelAndTextBox(out maxLabel, out maxTextBox, "Max", 240);
+			SetRequiredField(maxTextBox, "Enter the maximum inventory level.");
 			CreateLabelAndTextBox(out minLabel, out minTextBox, "Min", 280);
+			SetRequiredField(minTextBox, "Enter the minimum inventory level.");
 		}
 
 		// Event Handlers
@@ -266,6 +275,16 @@ namespace InventoryManagement
 			priceTextBox.Text = product.Price.ToString();
 			maxTextBox.Text = product.Max.ToString();
 			minTextBox.Text = product.Min.ToString();
+		}
+
+		// helper methods to config required fields
+		private void SetRequiredField(TextBox textBox, string tooltipText)
+		{
+			// set the background color to red to indicate a required field
+			textBox.BackColor = Color.LightYellow;
+
+			// set the tooltip for the required field
+			tooltip.SetToolTip(textBox, tooltipText);
 		}
 
 		// validation methods to handle user input errors
@@ -304,6 +323,13 @@ namespace InventoryManagement
 			if (inStock < min || inStock > max)
 			{
 				MessageBox.Show("Inventory value must be within the minimum and maximum range.", "Invalid Inventory", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				return;
+			}
+
+			// validate that the product has at least one associated part'
+			if (product.AssociatedParts.Count == 0)
+			{
+				MessageBox.Show("Please add at least one associated part to the product.", "No Associated Parts", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return;
 			}
 

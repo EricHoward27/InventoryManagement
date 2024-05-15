@@ -54,6 +54,9 @@ namespace InventoryManagement
 			// bind the grid view data source to the binding list of products
 			productsGridView.DataSource = inventory.Products;
 
+			// disable the default row
+			productsGridView.AllowUserToAddRows = false;
+
 			// the selectionchange event will be triggered when the user selects a row in the grid
 			productsGridView.SelectionChanged += ProductsGridView_SelectionChanged;
 		}

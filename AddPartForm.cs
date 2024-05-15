@@ -10,6 +10,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+
+
 namespace InventoryManagement
 {
 	public partial class AddPartForm : Form
@@ -19,11 +21,13 @@ namespace InventoryManagement
 		private TextBox idTextBox, nameTextBox, inventoryTextBox, priceTextBox, maxTextBox, minTextBox, companyOrMachineTextBox;
 		private Label idLabel, nameLabel, inventoryLabel, priceLabel, maxLabel, minLabel, titleLabel, companyOrMachineLabel;
 		private Inventory inventory;
+		private ToolTip tooltip;
 
 		// pass the instance of the Inventory Model to the AddPartForm constructor
 		public AddPartForm(Inventory inventory)
 		{
 			this.inventory = inventory;
+
 			InitializeComponents();
 		}
 		private void InitializeComponents()
@@ -56,15 +60,23 @@ namespace InventoryManagement
 			Controls.Add(outsourceRadioButton);
 
 			//Part Details Labels and TextBoxes I am using the CreateLabelAndTextBox method to create the labels and textboxes for the part details
+
+			//initialize the tooltip
+			tooltip = new ToolTip();
 			CreateLabelAndTextBox(out idLabel, out idTextBox, "ID", 80);
 			// Generate the next part ID
 			idTextBox.Text = inventory.GetNextPartID().ToString();
 			idTextBox.Enabled = false;
 			CreateLabelAndTextBox(out nameLabel, out nameTextBox, "Name", 120);
+			SetRequiredField(nameTextBox, "Part Name is required.");
 			CreateLabelAndTextBox(out inventoryLabel, out inventoryTextBox, "Inventory", 160);
+			SetRequiredField(inventoryTextBox, "Inventory value is required, must be number.");
 			CreateLabelAndTextBox(out priceLabel, out priceTextBox, "Price", 200);
+			SetRequiredField(priceTextBox, "Price value is required, must be number.");
 			CreateLabelAndTextBox(out maxLabel, out maxTextBox, "Max", 240);
+			SetRequiredField(maxTextBox, "Max value is required, must be number.");
 			CreateLabelAndTextBox(out minLabel, out minTextBox, "Min", 280);
+			SetRequiredField(minTextBox, "Min value is required, must be number.");
 			CreateLabelAndTextBox(out companyOrMachineLabel, out companyOrMachineTextBox, "Machine ID", 320);
 
 			// Save Button
@@ -183,6 +195,16 @@ namespace InventoryManagement
 		{
 			// Logic to cancel the part information
 			Close();
+		}
+
+		// helper methods to config required fields
+		private void SetRequiredField(TextBox textBox, string tooltipText)
+		{
+			// set the background color to red to indicate a required field
+			textBox.BackColor = Color.LightYellow;
+
+			// set the tooltip for the required field
+			tooltip.SetToolTip(textBox, tooltipText);
 		}
 	}
 }
