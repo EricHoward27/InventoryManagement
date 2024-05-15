@@ -285,6 +285,21 @@ namespace InventoryManagement
 
 			// set the tooltip for the required field
 			tooltip.SetToolTip(textBox, tooltipText);
+
+			// add event handler to change the background color when the text box is empty
+			textBox.TextChanged += (sender, e) =>
+			{
+				TextBox currentTextBox = sender as TextBox;
+
+				if (string.IsNullOrEmpty(currentTextBox.Text))
+				{
+					currentTextBox.BackColor = Color.LightYellow;
+				}
+				else
+				{
+					currentTextBox.BackColor = SystemColors.Window;
+				}
+			};
 		}
 
 		// validation methods to handle user input errors
