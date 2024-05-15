@@ -338,7 +338,6 @@ namespace InventoryManagement
 		}
 
 		// Create a method that redirects to the Modify Part Form when the Modify Part Button is clicked 
-		// this method will pass the ;
 		private void ModifyPartButton_Click(object sender, EventArgs e)
 		{
 			// create modify part form instance and pass the inventory and the selected part
@@ -360,8 +359,21 @@ namespace InventoryManagement
 		// Modify Product Button Click
 		private void ModifyProductButton_Click(object sender, EventArgs e)
 		{
-			ModifyProductForm modifyProductForm = new ModifyProductForm(newProduct, inventory);
-			modifyProductForm.Show();
+			
+			if(productsGridView.SelectedRows.Count > 0)
+			{
+				Product selectedProduct = (Product)productsGridView.SelectedRows[0].DataBoundItem;
+				ModifyProductForm modifyProductForm = new ModifyProductForm(selectedProduct, inventory);
+				if(modifyProductForm.ShowDialog() == DialogResult.OK)
+				{
+					// refresh the grid view
+					productsGridView.Refresh();
+				}
+			}
+			else
+			{
+				MessageBox.Show("Please select a product to modify.");
+			}
 		}
 
 		// create a method that delete a part from the grid when the Delete Part Button is clicked
