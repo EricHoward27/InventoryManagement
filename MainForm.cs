@@ -320,7 +320,12 @@ namespace InventoryManagement
 		private void AddPartButton_Click(object sender, EventArgs e)
 		{
 			AddPartForm addPartForm = new AddPartForm(inventory);
-			addPartForm.Show();
+			if(addPartForm.ShowDialog() == DialogResult.OK)
+			{
+				// refresh the parts grid view to show the newly added part
+				partsGridView.DataSource = null;
+				partsGridView.DataSource = inventory.AllParts;
+			}
 		}
 
 		// This method is used to add the new part to the inventory class in the model(Inventory.AddPart) AddPart method 
@@ -334,25 +339,36 @@ namespace InventoryManagement
 		private void AddProductButton_Click(object sender, EventArgs e)
 		{
 			AddProductForm addProductForm = new AddProductForm(newProduct, inventory);
-			addProductForm.Show();
+			if(addProductForm.ShowDialog() == DialogResult.OK)
+			{
+				// refresh the products grid view to show the newly added product
+				productsGridView.DataSource = null;
+				productsGridView.DataSource = inventory.Products;
+			}
 		}
 
 		// Create a method that redirects to the Modify Part Form when the Modify Part Button is clicked 
 		private void ModifyPartButton_Click(object sender, EventArgs e)
 		{
-			// create modify part form instance and pass the inventory and the selected part
-			if(selectedPart != null)
+			if (partsGridView.SelectedRows.Count > 0)
 			{
-				ModifyPartForm modifyPartForm = new ModifyPartForm(selectedPart, inventory);
-				if(modifyPartForm.ShowDialog() == DialogResult.OK)
+				// retrieve the selected part
+				Part selectedPart = (Part)partsGridView.SelectedRows[0].DataBoundItem;
+				// create modify part form instance and pass the inventory and the selected part
+				if (selectedPart != null)
 				{
-					// refresh the grid view
-					partsGridView.Refresh();
+					ModifyPartForm modifyPartForm = new ModifyPartForm(selectedPart, inventory);
+					if (modifyPartForm.ShowDialog() == DialogResult.OK)
+					{
+						// refresh the parts grid view to show the modified part
+						partsGridView.DataSource = null;
+						partsGridView.DataSource = inventory.AllParts;
+					}
 				}
-			}
-			else
-			{
-				MessageBox.Show("Please select a part to modify.");
+				else
+				{
+					MessageBox.Show("Please select a part to modify.", "No Part Selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
+				}
 			}
 		}
 
@@ -362,45 +378,65 @@ namespace InventoryManagement
 			
 			if(productsGridView.SelectedRows.Count > 0)
 			{
-				Product selectedProduct = (Product)productsGridView.SelectedRows[0].DataBoundItem;
-				ModifyProductForm modifyProductForm = new ModifyProductForm(selectedProduct, inventory);
-				if(modifyProductForm.ShowDialog() == DialogResult.OK)
+				if(productsGridView.SelectedRows.Count > 0)
 				{
-					// refresh the grid view
-					productsGridView.Refresh();
+					Product selectedProduct = (Product)productsGridView.SelectedRows[0].DataBoundItem;
+					if(selectedProduct != null)
+					{
+						ModifyProductForm modifyProductForm = new ModifyProductForm(selectedProduct, inventory);
+						if (modifyProductForm.ShowDialog() == DialogResult.OK)
+						{
+							// refresh the products grid view to show the modified product
+							productsGridView.DataSource = null;
+							productsGridView.DataSource = inventory.Products;
+						}
+					}
+						
 				}
+				else
+				{
+					MessageBox.Show("Please select a product to modify.", "No Product Selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
+				}
+
 			}
-			else
-			{
-				MessageBox.Show("Please select a product to modify.");
-			}
+				
+				
+			
 		}
 
 		// create a method that delete a part from the grid when the Delete Part Button is clicked
 		private void DeletePartButton_Click(object sender, EventArgs e)
 		{
-			//Logic to delete a part from the grid
 			if(partsGridView.SelectedRows.Count > 0)
 			{
-				int selectdIndex = partsGridView.SelectedRows[0].Index;
-				if(selectdIndex != -1)
+				Part selectedPart = (Part)partsGridView.SelectedRows[0].DataBoundItem;
+				if(selectedPart != null)
 				{
-					// Confirm deletion from the user
-					DialogResult confirmResult = MessageBox.Show("Are you sure you want ot delete this part?", "Confirm Delete",
-						MessageBoxButtons.YesNo);
-					if(confirmResult == DialogResult.Yes)
+					// check if the part is associated with a product
+					foreach(Product product in inventory.Products)
 					{
-						Part selectedPart = (Part)partsGridView.Rows[selectdIndex].DataBoundItem;
+						if(product.AssociatedParts.Contains(selectedPart))
+						{
+							MessageBox.Show("Cannot delete part because it is associated with a product.", "Deletion Blocked", MessageBoxButtons.OK, MessageBoxIcon.Error);
+							return;
+						}
+					}
+					// Confirm deletion from the user
+					DialogResult confirmResult = MessageBox.Show("Are you sure you want to delete this part?", "Confirm Delete",
+											MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+					if (confirmResult == DialogResult.Yes)
+					{
 						inventory.DeletePart(selectedPart);
-						// refresh the grid view
+						// refresh the parts grid view to reflect the deletion
 						partsGridView.DataSource = null;
 						partsGridView.DataSource = inventory.AllParts;
 					}
 				}
+				
 			}
 			else
 			{
-				MessageBox.Show("Please select a part to delete.");
+				MessageBox.Show("Please select a part to delete.", "Selection Required", MessageBoxButtons.OK, MessageBoxIcon.Information);
 			}
 
 		}
@@ -414,38 +450,24 @@ namespace InventoryManagement
 			{
 				// retrieve the selected product
 				Product selectedProduct = (Product)productsGridView.SelectedRows[0].DataBoundItem;
-				// Confirm deletion from the user
-				DialogResult confirmResult = MessageBox.Show("Are you sure you want to delete this product?", "Confirm Delete",
-					MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-
-				if (confirmResult == DialogResult.Yes)
+				if(selectedProduct != null)
 				{
-					// check if the product has associated parts that might prevent deletion
-					if(selectedProduct.AssociatedParts.Count > 0)
-					{
-						MessageBox.Show("Cannot delete product because it has associated parts.", "Deletion Blocked", MessageBoxButtons.OK, MessageBoxIcon.Error);
-					}
-					else
-					{
-						// remove the product from the inventory
-						if (inventory.RemoveProduct(selectedProduct.ProductID))
-						{
-							MessageBox.Show("Product deleted successfully.", "Deletion Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
-							// refresh the grid view
-							productsGridView.DataSource = null;
+					// Confirm deletion from the user
+					DialogResult confirmResult = MessageBox.Show("Are you sure you want to delete this product?", "Confirm Delete",
+						MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
-							productsGridView.DataSource = inventory.Products;
-						}
-						else
-						{
-							MessageBox.Show("Error deleting product.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-						}
+					if (confirmResult == DialogResult.Yes)
+					{
+						inventory.RemoveProduct(selectedProduct.ProductID);
+						//reresh the products grid view to reflect the deletion
+						productsGridView.DataSource = null;
+						productsGridView.DataSource = inventory.Products;
 					}
 				}
 			}
 			else
 			{
-				MessageBox.Show("Please select a product to delete.", "Selection Required", MessageBoxButtons.OK, MessageBoxIcon.Information);
+				MessageBox.Show("Please select a product to delete.", "No Product Selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
 			}
 		}
 
