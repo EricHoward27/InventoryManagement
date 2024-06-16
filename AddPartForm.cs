@@ -65,7 +65,7 @@ namespace InventoryManagement
 			tooltip = new ToolTip();
 			CreateLabelAndTextBox(out idLabel, out idTextBox, "ID", 80);
 			// Generate the next part ID
-			idTextBox.Text = inventory.GetNextPartID().ToString();
+			idTextBox.Text = inventory.GeneratePartID().ToString();
 			idTextBox.Enabled = false;
 			CreateLabelAndTextBox(out nameLabel, out nameTextBox, "Name", 120);
 			SetRequiredField(nameTextBox, "Part Name is required.");
@@ -126,16 +126,6 @@ namespace InventoryManagement
 			}
 		}
 
-		// validation methods to handle user input errors
-		private bool IsNumericValid(string input, out int result)
-		{
-			return int.TryParse(input, out result);
-		}
-
-		private bool IsDecimalValid(string input, out decimal result)
-		{
-			return decimal.TryParse(input, out result);
-		}
 
 		// create a method to save the part information to the Inventory Model.AddPart method to store in the binding list
 		private void saveButton_Click(object sender, EventArgs e)

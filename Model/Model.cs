@@ -68,19 +68,22 @@ namespace InventoryManagement.Model
 
 	public class Inventory
 	{
-		public BindingList<Product> Products { get; set; } = new BindingList<Product>();
+		private BindingList<Product> products = new BindingList<Product>();
+
+		private BindingList<Part> parts = new BindingList<Part>();
+		public BindingList<Product> Products => products;
+		public BindingList<Part> Parts => parts;
 		public BindingList<Part> AllParts { get; set; } = new BindingList<Part>();
 
 		// auto increment the part id
-		public int GetNextPartID()
+		public int GeneratePartID()
 		{
 			return AllParts.Any() ? AllParts.Max(part => part.PartID) + 1 : 1;
 		}
 
-		// auto increment the product id
-		public int GetNextProductID()
+		public int GenerateProductID()
 		{
-			return Products.Any() ? Products.Max(product => product.ProductID) + 1 : 1;
+			return products.Count > 0 ? products.Max(p => p.ProductID) + 1 : 1;
 		}
 
 		// this method is to search for part by name in the binding list
@@ -96,9 +99,19 @@ namespace InventoryManagement.Model
 		}
 
 		// this method is to search for associated part by name in the binding list
-		public List<Part> SearchAssociatedPart(string searchString, BindingList<Part> associatedParts)
+		public BindingList<Part> SearchAssociatedPart(string searchText, BindingList<Part> associatedParts)
 		{
-			return associatedParts.Where(part => part.Name.ToLower().Contains(searchString.ToLower())).ToList();
+			BindingList<Part> foundParts = new BindingList<Part>();
+
+			foreach (Part part in associatedParts)
+			{
+				if (part.Name.ToLower().Contains(searchText.ToLower()) || part.PartID.ToString().Contains(searchText))
+				{
+					foundParts.Add(part);
+				}
+			}
+
+			return foundParts;
 		}
 		public void AddProduct(Product product)
 		{

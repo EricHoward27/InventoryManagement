@@ -22,9 +22,9 @@ namespace InventoryManagement
 		private ToolTip tooltip;
 		public AddProductForm(Product product, Inventory inventory)
 		{
-			this.product = product;
-
 			this.inventory = inventory;
+
+			this.product = product;
 
 			InitializeComponents();
 
@@ -229,7 +229,7 @@ namespace InventoryManagement
 			// init tooltip component
 			tooltip = new ToolTip();
 			CreateLabelAndTextBox(out idLabel, out idTextBox, "ID", 80);
-			idTextBox.Text = inventory.GetNextPartID().ToString();
+			idTextBox.Text = inventory.GenerateProductID().ToString();
 			idTextBox.Enabled = false;
 			CreateLabelAndTextBox(out nameLabel, out nameTextBox, "Name", 120);
 			SetRequiredField(nameTextBox, "Enter the name of the product.");
@@ -286,76 +286,88 @@ namespace InventoryManagement
 			};
 		}
 
-		// validation methods to handle user input errors
-		private bool IsNumericValid(string input, out int result)
-		{
-			return int.TryParse(input, out result);
-		}
-
-		private bool IsDecimalValid(string input, out decimal result)
-		{
-			return decimal.TryParse(input, out result);
-		}
-
 		private void saveButton_Click(object sender, EventArgs e)
 		{
-			int inStock, min, max;
+			// Initialize variables for validation
+			int inv, min, max;
 			decimal price;
+			bool isValid = true;
+			string errorMessage = "";
 
-			// validate if the user input is a valid numeric value for each text box field that requires it
-			if (!IsNumericValid(inventoryTextBox.Text, out inStock) || !IsDecimalValid(priceTextBox.Text, out price) ||
-				! IsNumericValid(minTextBox.Text, out min) || !IsNumericValid(maxTextBox.Text, out max))
+			// Validate Inventory
+			if (!int.TryParse(inventoryTextBox.Text, out inv) || inv < 0)
 			{
-				MessageBox.Show("Please enter valid numeric values.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				isValid = false;
+				errorMessage += "Inventory must be a positive integer.\n";
+				inventoryTextBox.BackColor = Color.LightYellow;
+			}
+
+			// Validate Price
+			if (!decimal.TryParse(priceTextBox.Text, out price) || price < 0)
+			{
+				isValid = false;
+				errorMessage += "Price must be a positive decimal.\n";
+				priceTextBox.BackColor = Color.LightYellow;
+			}
+
+			// Validate Min
+			if (!int.TryParse(minTextBox.Text, out min) || min < 0)
+			{
+				isValid = false;
+				errorMessage += "Min must be a positive integer.\n";
+				minTextBox.BackColor = Color.LightYellow;
+			}
+
+			// Validate Max
+			if (!int.TryParse(maxTextBox.Text, out max) || max < 0)
+			{
+				isValid = false;
+				errorMessage += "Max must be a positive integer.\n";
+				maxTextBox.BackColor = Color.LightYellow;
+			}
+
+			// Check if Min is greater than Max
+			if (isValid && min > max)
+			{
+				isValid = false;
+				errorMessage += "Min cannot be greater than Max.\n";
+				minTextBox.BackColor = Color.LightYellow;
+				maxTextBox.BackColor = Color.LightYellow;
+			}
+
+			// If validation fails, show error message and return
+			if (!isValid)
+			{
+				MessageBox.Show(errorMessage, "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return;
 			}
 
-			if(min > max)
-			{
-				MessageBox.Show("Minimum value cannot be greater than the maximum value.", "Invalid Range", MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
-			}
-
-			if(inStock < min || inStock > max)
-			{
-				MessageBox.Show("Inventory value must be within the minimum and maximum range.", "Invalid Inventory", MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
-			}
-
-			// validate that the product has at least one associated part'
+			// Ensure the product has at least one associated part
 			if (product.AssociatedParts.Count == 0)
 			{
-				MessageBox.Show("Please add at least one associated part to the product.", "No Associated Parts", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				MessageBox.Show("A product must have at least one associated part.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return;
 			}
-			// Save the product information to the Inventory Model.AddProduct method to store in the binding list
-			try
+
+			// Proceed with saving the product
+			product.ProductID = product.ProductID == 0 ? inventory.GenerateProductID() : product.ProductID;
+			product.Name = nameTextBox.Text;
+			product.InStock = inv;
+			product.Price = price;
+			product.Min = min;
+			product.Max = max;
+
+			if (product.ProductID == 0)
 			{
-				// create new product instance and set the properties from the form
-				Product newProduct = new Product
-				{
-					ProductID = int.Parse(idTextBox.Text),
-					Name = nameTextBox.Text,
-					Price = decimal.Parse(priceTextBox.Text),
-					InStock = int.Parse(inventoryTextBox.Text),
-					Min = int.Parse(minTextBox.Text),
-					Max = int.Parse(maxTextBox.Text)
-				};
-				// add each associated part from the associated parts grid view to the new product
-				foreach (DataGridViewRow row in associatedPartsGridView.Rows)
-				{
-					var part = (Part)row.DataBoundItem;
-					newProduct.AddAssociatedPart(part);
-				}
-				// add the new product to the inventory
-				inventory.AddProduct(newProduct);
-				// close the form
-				this.Close();
+				inventory.AddProduct(product);
 			}
-			catch(Exception ex)
+			else
 			{
-				MessageBox.Show($"Error adding product: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				inventory.UpdateProduct(product.ProductID, product);
 			}
+
+			this.DialogResult = DialogResult.OK;
+			this.Close();
 		}
 
 		// Cancel Button Click Event
@@ -367,21 +379,11 @@ namespace InventoryManagement
 		// Add Button Click Event
 		private void addButton_Click(object sender, EventArgs e)
 		{
-			// retrieve the selected part from the all parts grid view
-			if(allPartsGridView.SelectedRows.Count > 0)
+			AddProductForm addProductForm = new AddProductForm(new Product { AssociatedParts = new BindingList<Part>() }, inventory);
+			if (addProductForm.ShowDialog() == DialogResult.OK)
 			{
-				Part selectedPart = (Part)allPartsGridView.SelectedRows[0].DataBoundItem;
-
-				// add the selected part to the associated parts grid view
-				product.AddAssociatedPart(selectedPart);
-
-				// refresh the associated parts grid view to show the newly added part
-				associatedPartsGridView.DataSource = null;
-				associatedPartsGridView.DataSource = product.AssociatedParts;
-			}
-			else
-			{
-				MessageBox.Show("Please select a part to add.", "Selection Required", MessageBoxButtons.OK, MessageBoxIcon.Information);
+				// Refresh the grid view
+				allPartsGridView.Refresh();
 			}
 		}
 
@@ -418,14 +420,12 @@ namespace InventoryManagement
 			var foundParts = inventory.SearchAssociatedPart(searchText, product.AssociatedParts);
 			associatedPartsGridView.DataSource = foundParts;
 
-			// highlight the matching row
-			foreach(DataGridViewRow row in associatedPartsGridView.Rows)
+			// Highlight the matching row
+			foreach (DataGridViewRow row in associatedPartsGridView.Rows)
 			{
 				if (row.Cells["Name"].Value.ToString().ToLower().Contains(searchText))
 				{
-					// select the matching row
-					allPartsGridView.Rows[row.Index].Selected = true;
-
+					row.Selected = true;
 					row.DefaultCellStyle.BackColor = Color.Yellow;
 				}
 				else
@@ -433,11 +433,11 @@ namespace InventoryManagement
 					row.DefaultCellStyle.BackColor = Color.White;
 				}
 			}
+
 			if (foundParts.Count == 0)
 			{
 				MessageBox.Show("No associated parts found matching the search criteria.", "No Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
 			}
-
 		}
 
 	}
