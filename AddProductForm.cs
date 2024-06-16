@@ -350,15 +350,16 @@ namespace InventoryManagement
 			}
 
 			// Proceed with saving the product
-			product.ProductID = product.ProductID == 0 ? inventory.GenerateProductID() : product.ProductID;
 			product.Name = nameTextBox.Text;
 			product.InStock = inv;
 			product.Price = price;
 			product.Min = min;
 			product.Max = max;
 
+			// Proceed with saving the product
 			if (product.ProductID == 0)
 			{
+				product.ProductID = inventory.GenerateProductID();
 				inventory.AddProduct(product);
 			}
 			else
@@ -379,11 +380,20 @@ namespace InventoryManagement
 		// Add Button Click Event
 		private void addButton_Click(object sender, EventArgs e)
 		{
-			AddProductForm addProductForm = new AddProductForm(new Product { AssociatedParts = new BindingList<Part>() }, inventory);
-			if (addProductForm.ShowDialog() == DialogResult.OK)
+			if (allPartsGridView.SelectedRows.Count > 0)
 			{
-				// Refresh the grid view
-				allPartsGridView.Refresh();
+				foreach (DataGridViewRow row in allPartsGridView.SelectedRows)
+				{
+					Part selectedPart = row.DataBoundItem as Part;
+					if (selectedPart != null && !product.AssociatedParts.Contains(selectedPart))
+					{
+						product.AddAssociatedPart(selectedPart);
+					}
+				}
+			}
+			else
+			{
+				MessageBox.Show("Please select a part to add.");
 			}
 		}
 

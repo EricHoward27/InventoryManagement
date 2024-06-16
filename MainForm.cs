@@ -338,10 +338,11 @@ namespace InventoryManagement
 		// Add Product Button Click
 		private void AddProductButton_Click(object sender, EventArgs e)
 		{
+			Product newProduct = new Product { AssociatedParts = new BindingList<Part>() };
 			AddProductForm addProductForm = new AddProductForm(newProduct, inventory);
-			if(addProductForm.ShowDialog() == DialogResult.OK)
+			if (addProductForm.ShowDialog() == DialogResult.OK)
 			{
-				// refresh the products grid view to show the newly added product
+				// Refresh the grid view
 				productsGridView.DataSource = null;
 				productsGridView.DataSource = inventory.Products;
 			}
@@ -375,33 +376,28 @@ namespace InventoryManagement
 		// Modify Product Button Click
 		private void ModifyProductButton_Click(object sender, EventArgs e)
 		{
-			
-			if(productsGridView.SelectedRows.Count > 0)
+			if (productsGridView.SelectedRows.Count > 0)
 			{
-				if(productsGridView.SelectedRows.Count > 0)
+				Product selectedProduct = (Product)productsGridView.SelectedRows[0].DataBoundItem;
+				if (selectedProduct != null)
 				{
-					Product selectedProduct = (Product)productsGridView.SelectedRows[0].DataBoundItem;
-					if(selectedProduct != null)
+					ModifyProductForm modifyProductForm = new ModifyProductForm(selectedProduct, inventory);
+					if (modifyProductForm.ShowDialog() == DialogResult.OK)
 					{
-						ModifyProductForm modifyProductForm = new ModifyProductForm(selectedProduct, inventory);
-						if (modifyProductForm.ShowDialog() == DialogResult.OK)
-						{
-							// refresh the products grid view to show the modified product
-							productsGridView.DataSource = null;
-							productsGridView.DataSource = inventory.Products;
-						}
+						// Refresh the grid view
+						productsGridView.DataSource = null;
+						productsGridView.DataSource = inventory.Products;
 					}
-						
 				}
 				else
 				{
 					MessageBox.Show("Please select a product to modify.", "No Product Selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
 				}
-
 			}
-				
-				
-			
+			else
+			{
+				MessageBox.Show("Please select a product to modify.", "No Product Selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
+			}
 		}
 
 		// create a method that delete a part from the grid when the Delete Part Button is clicked
