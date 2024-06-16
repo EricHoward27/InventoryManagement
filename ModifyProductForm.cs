@@ -19,6 +19,7 @@ namespace InventoryManagement
 		private Label idLabel, nameLabel, inventoryLabel, priceLabel, maxLabel, minLabel, titleLabel, allPartsLabel, associatedPartsLabel;
 		private Inventory inventory;
 		private Product product;
+		private BindingList<Part> originalAssociatedParts;
 		private ToolTip tooltip;
 
 		public ModifyProductForm(Product product, Inventory inventory)
@@ -26,6 +27,8 @@ namespace InventoryManagement
 			this.inventory = inventory;
 
 			this.product = product;
+
+			this.originalAssociatedParts = new BindingList<Part>(product.AssociatedParts.ToList());
 
 			InitializeComponents();
 
@@ -318,72 +321,93 @@ namespace InventoryManagement
 		// save button click event
 		private void saveButton_Click(object sender, EventArgs e	)
 		{
-			int inStock, min, max;
+			// Initialize variables for validation
+			int inv, min, max;
 			decimal price;
+			bool isValid = true;
+			string errorMessage = "";
 
-			// validate if the user input is a valid numeric value for each text box field that requires it
-			if (!IsNumericValid(inventoryTextBox.Text, out inStock) || !IsDecimalValid(priceTextBox.Text, out price) ||
-				!IsNumericValid(minTextBox.Text, out min) || !IsNumericValid(maxTextBox.Text, out max))
+			// Validate Inventory
+			if (!int.TryParse(inventoryTextBox.Text, out inv) || inv < 0)
 			{
-				MessageBox.Show("Please enter valid numeric values.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				isValid = false;
+				errorMessage += "Inventory must be a positive integer.\n";
+				inventoryTextBox.BackColor = Color.LightYellow;
+			}
+
+			// Validate Price
+			if (!decimal.TryParse(priceTextBox.Text, out price) || price < 0)
+			{
+				isValid = false;
+				errorMessage += "Price must be a positive decimal.\n";
+				priceTextBox.BackColor = Color.LightYellow;
+			}
+
+			// Validate Min
+			if (!int.TryParse(minTextBox.Text, out min) || min < 0)
+			{
+				isValid = false;
+				errorMessage += "Min must be a positive integer.\n";
+				minTextBox.BackColor = Color.LightYellow;
+			}
+
+			// Validate Max
+			if (!int.TryParse(maxTextBox.Text, out max) || max < 0)
+			{
+				isValid = false;
+				errorMessage += "Max must be a positive integer.\n";
+				maxTextBox.BackColor = Color.LightYellow;
+			}
+
+			// Check if Min is greater than Max
+			if (isValid && min > max)
+			{
+				isValid = false;
+				errorMessage += "Min cannot be greater than Max.\n";
+				minTextBox.BackColor = Color.LightYellow;
+				maxTextBox.BackColor = Color.LightYellow;
+			}
+
+			// If validation fails, show error message and return
+			if (!isValid)
+			{
+				MessageBox.Show(errorMessage, "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return;
 			}
 
-			if (min > max)
-			{
-				MessageBox.Show("Minimum value cannot be greater than the maximum value.", "Invalid Range", MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
-			}
-
-			if (inStock < min || inStock > max)
-			{
-				MessageBox.Show("Inventory value must be within the minimum and maximum range.", "Invalid Inventory", MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
-			}
-
-			// validate that the product has at least one associated part'
+			// Ensure the product has at least one associated part
 			if (product.AssociatedParts.Count == 0)
 			{
-				MessageBox.Show("Please add at least one associated part to the product.", "No Associated Parts", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				MessageBox.Show("A product must have at least one associated part.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return;
 			}
 
-			try
-			{
-				// pass the product details to the product object
-				product.Name = nameTextBox.Text;
-				product.InStock = int.Parse(inventoryTextBox.Text);
-				product.Price = decimal.Parse(priceTextBox.Text);
-				product.Max = int.Parse(maxTextBox.Text);
-				product.Min = int.Parse(minTextBox.Text);
+			// Proceed with saving the product
+			product.Name = nameTextBox.Text;
+			product.InStock = inv;
+			product.Price = price;
+			product.Min = min;
+			product.Max = max;
 
-				// update the product in the inventory
-				inventory.UpdateProduct(product.ProductID, product);
+			inventory.UpdateProduct(product.ProductID, product);
 
-				// close the modify product form
-				this.Close();
-			}
-			catch(Exception ex)
-			{
-				MessageBox.Show($"Error updating product: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-			}
+			this.DialogResult = DialogResult.OK;
+			this.Close();
 		}
 
 		// add button click event
 		private void addButton_Click(object sender, EventArgs e)
 		{
-			if(allPartsGridView.SelectedRows.Count > 0)
+			if (allPartsGridView.SelectedRows.Count > 0)
 			{
-				// get the selected part
-				Part selectedPart = (Part)allPartsGridView.SelectedRows[0].DataBoundItem;
-
-				// add the selected part to the product
-				product.AddAssociatedPart(selectedPart);
-
-				// refresh the associated parts grid view
-				associatedPartsGridView.DataSource = null;
-
-				associatedPartsGridView.DataSource = product.AssociatedParts;
+				foreach (DataGridViewRow row in allPartsGridView.SelectedRows)
+				{
+					Part selectedPart = row.DataBoundItem as Part;
+					if (!product.AssociatedParts.Contains(selectedPart))
+					{
+						product.AddAssociatedPart(selectedPart);
+					}
+				}
 			}
 		}
 
@@ -406,6 +430,10 @@ namespace InventoryManagement
 
 		private void cancelButton_Click(object sender, EventArgs e)
 		{
+			// Restore the original associated parts
+			product.AssociatedParts = new BindingList<Part>(originalAssociatedParts);
+
+			this.DialogResult = DialogResult.Cancel;
 			this.Close();
 		}
 
@@ -413,17 +441,15 @@ namespace InventoryManagement
 		private void searchButton_Click(object sender, EventArgs e)
 		{
 			string searchText = searchTextBox.Text.ToLower();
-			var foundParts = inventory.SearchAssociatedPart(searchText, product.AssociatedParts);
-			associatedPartsGridView.DataSource = foundParts;
+			var foundParts = inventory.SearchPart(searchText);
+			allPartsGridView.DataSource = foundParts;
 
-			// highlight the matching row
-			foreach (DataGridViewRow row in associatedPartsGridView.Rows)
+			// Highlight the matching row
+			foreach (DataGridViewRow row in allPartsGridView.Rows)
 			{
-				if (row.Cells["Name"].Value.ToString().ToLower().Contains(searchText))
+				if (row.Cells["Name"].Value.ToString().ToLower().Contains(searchText) || row.Cells["PartID"].Value.ToString().Contains(searchText))
 				{
-					// select the matching row
-					allPartsGridView.Rows[row.Index].Selected = true;
-
+					row.Selected = true;
 					row.DefaultCellStyle.BackColor = Color.Yellow;
 				}
 				else
@@ -431,11 +457,11 @@ namespace InventoryManagement
 					row.DefaultCellStyle.BackColor = Color.White;
 				}
 			}
+
 			if (foundParts.Count == 0)
 			{
-				MessageBox.Show("No associated parts found matching the search criteria.", "No Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
+				MessageBox.Show("No parts found matching the search criteria.", "No Results", MessageBoxButtons.OK, MessageBoxIcon.Information);
 			}
-
 		}
 	}
 }
