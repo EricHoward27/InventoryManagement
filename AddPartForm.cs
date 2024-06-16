@@ -140,35 +140,71 @@ namespace InventoryManagement
 		// create a method to save the part information to the Inventory Model.AddPart method to store in the binding list
 		private void saveButton_Click(object sender, EventArgs e)
 		{
-			int inStock, min, max;
+			int inv, min, max;
 			decimal price;
+			bool isValid = true;
+			string errorMessage = "";
 
-			// validate if the user input is a valid numeric value for each text box field that requires it
-			if (!IsNumericValid(inventoryTextBox.Text, out inStock) || !IsDecimalValid(priceTextBox.Text, out price) ||
-				!IsNumericValid(minTextBox.Text, out min) || !IsNumericValid(maxTextBox.Text, out max))
+			// validate inventory
+			if(!int.TryParse(inventoryTextBox.Text, out inv) || inv < 0)
 			{
-				MessageBox.Show("Please enter valid numeric values.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				isValid = false;
+				errorMessage += "Inventory must be a positve number. \n";
+				inventoryTextBox.BackColor = Color.LightYellow; 
+			}
+
+			// validate price
+			if(!decimal.TryParse(priceTextBox.Text, out price) || price < 0)
+			{
+				isValid = false;
+				errorMessage += "Price must be a positive number.\n";
+				priceTextBox.BackColor = Color.LightYellow;
+			}
+
+			// validate min
+			if(!int.TryParse(minTextBox.Text, out min) || min < 0)
+			{
+				isValid = false;
+				errorMessage += "Min must be a positive number.\n";
+				minTextBox.BackColor = Color.LightYellow;
+			}
+
+			// validate max
+			if(!int.TryParse(maxTextBox.Text, out max) || max < 0)
+			{
+				isValid = false;
+				errorMessage += "Max must be a positive number.\n";
+				maxTextBox.BackColor = Color.LightYellow;
+			}
+
+			// check if min is greater than max
+			if(isValid && min > max)
+			{
+				isValid = false;
+				errorMessage += "Min cannot be greater than Max.\n";
+				minTextBox.BackColor = Color.LightYellow;
+				maxTextBox.BackColor = Color.LightYellow;
+			}
+
+			// if validation fails, show error message and return
+			if (!isValid)
+			{
+				MessageBox.Show(errorMessage, "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return;
 			}
 
-			if (min > max)
-			{
-				MessageBox.Show("Minimum value cannot be greater than the maximum value.", "Invalid Range", MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
-			}
-
-			if (inStock < min || inStock > max)
-			{
-				MessageBox.Show("Inventory value must be within the minimum and maximum range.", "Invalid Inventory", MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
-			}
-
-			// Logic to save the part information
+			// Proceed with saving the part
 			Part part;
 			if (inHouseRadioButton.Checked)
 			{
 				part = new InHouse();
-				((InHouse)part).MachineID = int.Parse(companyOrMachineTextBox.Text);
+				if(!int.TryParse(companyOrMachineTextBox.Text, out int machineId))
+				{
+					MessageBox.Show("Machine ID must be a positive number.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					companyOrMachineTextBox.BackColor = Color.LightYellow;
+					return;
+				}
+				((InHouse)part).MachineID = machineId;
 			}
 			else
 			{
@@ -177,17 +213,14 @@ namespace InventoryManagement
 			}
 			part.PartID = int.Parse(idTextBox.Text);
 			part.Name = nameTextBox.Text;
-			part.InStock = int.Parse(inventoryTextBox.Text);
-			part.Price = decimal.Parse(priceTextBox.Text);
-			part.Max = int.Parse(maxTextBox.Text);
-			part.Min = int.Parse(minTextBox.Text);
+			part.InStock = inv;
+			part.Price = price;
+			part.Min = min;
+			part.Max = max;
 
-			// Add the part to the Inventory Model with a object reference to the Inventory Model
+			// Add the part to the inventory
 			inventory.AddPart(part);
-
-			// Redirect to the Main Form
-			Close();
-
+			this.Close();
 		}
 
 		// Cancel Button Click Event

@@ -26,6 +26,21 @@ namespace InventoryManagement
 			this.inventory = inventory;
 			InitializeComponents();
 			PopulateFormData(part);
+
+
+			// Check if part is InHouse or Outsourced
+			if (part is InHouse inHousePart)
+			{
+				inHouseRadioButton.Checked = true;
+				companyOrMachineTextBox.Text = inHousePart.MachineID.ToString();
+				companyOrMachineLabel.Text = "Machine ID";
+			}
+			else if (part is Outsourced outsourcedPart)
+			{
+				outsourcedRadioButton.Checked = true;
+				companyOrMachineTextBox.Text = outsourcedPart.CompanyName;
+				companyOrMachineLabel.Text = "Company Name";
+			}
 		}
 		
 		private void InitializeComponents()
@@ -125,76 +140,92 @@ namespace InventoryManagement
 			maxTextBox.Text = part.Max.ToString();
 			minTextBox.Text = part.Min.ToString();
 
-			// Now I am going to check if part is either in house or outsource
-			if(part is InHouse inHousePart)
-			{
-				inHouseRadioButton.Checked = true;
-				companyOrMachineTextBox.Text = inHousePart.MachineID.ToString();
-			}
-			else if(part is Outsourced outsourcedPart)
-			{
-				outsourcedRadioButton.Checked = true;
-				companyOrMachineTextBox.Text = outsourcedPart.CompanyName;
-			}
 		}
-		// validation methods to handle user input errors
-		private bool IsNumericValid(string input, out int result)
-		{
-			return int.TryParse(input, out result);
-		}
-
-		private bool IsDecimalValid(string input, out decimal result)
-		{
-			return decimal.TryParse(input, out result);
-		}
-
 
 		private void SaveButton_Click(object sender, EventArgs e)
 		{
-			int inStock, min, max;
+			// Initialize variables for validation
+			int inv, min, max;
 			decimal price;
+			bool isValid = true;
+			string errorMessage = "";
 
-			// validate if the user input is a valid numeric value for each text box field that requires it
-			if (!IsNumericValid(inventoryTextBox.Text, out inStock) || !IsDecimalValid(priceTextBox.Text, out price) ||
-				!IsNumericValid(minTextBox.Text, out min) || !IsNumericValid(maxTextBox.Text, out max))
+			// Validate Inventory
+			if (!int.TryParse(inventoryTextBox.Text, out inv) || inv < 0)
 			{
-				MessageBox.Show("Please enter valid numeric values.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				isValid = false;
+				errorMessage += "Inventory must be a positive integer.\n";
+				inventoryTextBox.BackColor = Color.LightYellow;
+			}
+
+			// Validate Price
+			if (!decimal.TryParse(priceTextBox.Text, out price) || price < 0)
+			{
+				isValid = false;
+				errorMessage += "Price must be a positive decimal.\n";
+				priceTextBox.BackColor = Color.LightYellow;
+			}
+
+			// Validate Min
+			if (!int.TryParse(minTextBox.Text, out min) || min < 0)
+			{
+				isValid = false;
+				errorMessage += "Min must be a positive integer.\n";
+				minTextBox.BackColor = Color.LightYellow;
+			}
+
+			// Validate Max
+			if (!int.TryParse(maxTextBox.Text, out max) || max < 0)
+			{
+				isValid = false;
+				errorMessage += "Max must be a positive integer.\n";
+				maxTextBox.BackColor = Color.LightYellow;
+			}
+
+			// Check if Min is greater than Max
+			if (isValid && min > max)
+			{
+				isValid = false;
+				errorMessage += "Min cannot be greater than Max.\n";
+				minTextBox.BackColor = Color.LightYellow;
+				maxTextBox.BackColor = Color.LightYellow;
+			}
+
+			// If validation fails, show error message and return
+			if (!isValid)
+			{
+				MessageBox.Show(errorMessage, "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return;
 			}
 
-			if (min > max)
+			// Proceed with saving the part
+			Part part;
+			if (inHouseRadioButton.Checked)
 			{
-				MessageBox.Show("Minimum value cannot be greater than the maximum value.", "Invalid Range", MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
+				part = new InHouse();
+				if (!int.TryParse(companyOrMachineTextBox.Text, out int machineId))
+				{
+					MessageBox.Show("Machine ID must be a positive integer.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					companyOrMachineTextBox.BackColor = Color.LightYellow;
+					return;
+				}
+				((InHouse)part).MachineID = machineId;
 			}
-
-			if (inStock < min || inStock > max)
+			else
 			{
-				MessageBox.Show("Inventory value must be within the minimum and maximum range.", "Invalid Inventory", MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
+				part = new Outsourced();
+				((Outsourced)part).CompanyName = companyOrMachineTextBox.Text;
 			}
-
-			// Logic to save part info
-			if (currentPart is InHouse && inHouseRadioButton.Checked)
-			{
-				((InHouse)currentPart).MachineID = int.Parse(companyOrMachineTextBox.Text);
-			}
-			else if (currentPart is Outsourced && outsourcedRadioButton.Checked)
-			{
-				((Outsourced)currentPart).CompanyName = companyOrMachineTextBox.Text;
-			}
-
-			currentPart.Name = nameTextBox.Text;
-			currentPart.InStock = int.Parse(inventoryTextBox.Text);
-			currentPart.Price = decimal.Parse(priceTextBox.Text);
-			currentPart.Max = int.Parse(maxTextBox.Text);
-			currentPart.Min = int.Parse(minTextBox.Text);
+			part.PartID = int.Parse(idTextBox.Text);
+			part.Name = nameTextBox.Text;
+			part.InStock = inv;
+			part.Price = price;
+			part.Min = min;
+			part.Max = max;
 
 			// Update the part in the inventory
-			inventory.UpdatePart(currentPart.PartID, currentPart);
-
-			// Close the form and return to the main form
-			Close();
+			this.inventory.UpdatePart(part.PartID, part);
+			this.Close();
 		}
 
 		private void CancelButton_Click(object sender, EventArgs e)
